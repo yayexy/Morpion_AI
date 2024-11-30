@@ -8,15 +8,10 @@ const int WIN_SCORE = 1;
 const int LOSS_SCORE = -1;
 const int TIE_SCORE = 0;
 
-struct AIMove {
-    int x;
-    int y;
-    int score;
-};
-
 struct Move {
     int x;
     int y;
+    int score;
 };
 
 bool isTie(char** tab, int boardSize){
@@ -40,27 +35,28 @@ int minimax(char** tab, int boardSize, int K, char pion, int depth, bool isMaxim
     int score;
 
     // End condition
-    if (resultAI == true || resultHuman == true || resultTie == true)
+    if (resultAI == true || resultHuman == true || resultTie == true || depth == 5)
     {
         if (resultAI)
         {
-            score = WIN_SCORE;
+            return WIN_SCORE;
         }
         else if (resultHuman){
-            score = LOSS_SCORE;
+            return LOSS_SCORE;
         }
         else if (resultTie){
-            score = TIE_SCORE;
+            return TIE_SCORE;
         }
-        
-        return score;
+        else{
+            return 0;
+        }
+        return 0;
     }
     
     // IA turn
     if (isMaximizing)
     {
         int bestScore = -1000;
-        Move move;
         for (int i = 0; i < boardSize; i++)
         {
             for (int j = 0; j < boardSize; j++)
@@ -68,7 +64,7 @@ int minimax(char** tab, int boardSize, int K, char pion, int depth, bool isMaxim
                 if (tab[i][j] == ' ')
                 {
                     tab[i][j] = pion;
-                    score = minimax(tab, boardSize, K, pion, depth + 1, false);
+                    score = minimax(tab, boardSize, K, 'O', depth + 1, false);
                     tab[i][j] = ' ';
                     bestScore = std::max(score, bestScore);
                 }  
@@ -79,7 +75,6 @@ int minimax(char** tab, int boardSize, int K, char pion, int depth, bool isMaxim
     else
     {
         int bestScore = 1000;
-        Move move;
         for (int i = 0; i < boardSize; i++)
         {
             for (int j = 0; j < boardSize; j++)
@@ -97,8 +92,9 @@ int minimax(char** tab, int boardSize, int K, char pion, int depth, bool isMaxim
     }
 }
 
-AIMove getBestMove(char** tab, int boardSize, int K, char pion){
+void getBestMove(char** tab, int boardSize, int K, char pion){
     int bestScore = -1000;
+    int score;
     Move move;
 
     // AI turn
@@ -112,10 +108,11 @@ AIMove getBestMove(char** tab, int boardSize, int K, char pion){
             if (tab[i][j] == ' ')
             {
                 tab[i][j] = pion;
-                int score = minimax(tab, boardSize, K, pion, 0, true);
+                score = minimax(tab, boardSize, K, pion, 0, true);
                 tab[i][j] = ' ';
                 if (score > bestScore)
                 {
+                    std::cout << "c'est mieux la" << std::endl;
                     bestScore = score;
                     move.x = i;
                     move.y = j;
