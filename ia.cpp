@@ -1,42 +1,129 @@
 #include <iostream>
+#include <map>
+#include <algorithm> // pour std::max et std::min
+
 #include "morpion.h"
 
-bool defendre(char** tab, int size, int nbpion, char pion) {
+const int WIN_SCORE = 1;
+const int LOSS_SCORE = -1;
+const int TIE_SCORE = 0;
 
-	for(int i = 0; i < size; ++i) {
-	
-		for(int j = 0; j < size; ++j) if (tab[i][j] == pion) {
-		
-			int align = 0, i2, j2; 
-			
-			i2 = i; align = 0;
-			while( i2 < size && (i2-i) < nbpion ) { 
-                align = align + (tab[i2][j] == pion); i2++; 
+struct AIMove {
+    int x;
+    int y;
+    int score;
+};
+
+struct Move {
+    int x;
+    int y;
+};
+
+bool isTie(char** tab, int boardSize){
+    for (int i = 0; i < boardSize; i++)
+    {
+        for (int j = 0; j < boardSize; j++)
+        {
+            if (tab[i][j] == ' ') // if there's one case empty, then the game's not ended
+            {
+                return false;
+            }
+        }
+    }
+    return true; // end game
+}
+
+int minimax(char** tab, int boardSize, int K, char pion, int depth, bool isMaximizing){
+    bool resultAI = victoire_morpion(tab, boardSize, K, pion);
+    bool resultHuman = victoire_morpion(tab, boardSize, K, 'O');
+    bool resultTie = isTie(tab, boardSize);
+    int score;
+
+    // End condition
+    if (resultAI == true || resultHuman == true || resultTie == true)
+    {
+        if (resultAI)
+        {
+            score = WIN_SCORE;
+        }
+        else if (resultHuman){
+            score = LOSS_SCORE;
+        }
+        else if (resultTie){
+            score = TIE_SCORE;
+        }
+        
+        return score;
+    }
+    
+    // IA turn
+    if (isMaximizing)
+    {
+        int bestScore = -1000;
+        Move move;
+        for (int i = 0; i < boardSize; i++)
+        {
+            for (int j = 0; j < boardSize; j++)
+            {
+                if (tab[i][j] == ' ')
+                {
+                    tab[i][j] = pion;
+                    score = minimax(tab, boardSize, K, pion, depth + 1, false);
+                    tab[i][j] = ' ';
+                    bestScore = std::max(score, bestScore);
+                }  
+            }
+        }
+        return bestScore;
+    }
+    else
+    {
+        int bestScore = 1000;
+        Move move;
+        for (int i = 0; i < boardSize; i++)
+        {
+            for (int j = 0; j < boardSize; j++)
+            {
+                if (tab[i][j] == ' ')
+                {
+                    tab[i][j] = 'O';
+                    score = minimax(tab, boardSize, K, pion, depth + 1, true);
+                    tab[i][j] = ' ';
+                    bestScore = std::min(score, bestScore);
                 }
-			if(align == nbpion-1) return true;
-			
-			j2 = j; align = 0;
-			while( j2 < size && (j2-j) < nbpion ) { 
-                align = align + (tab[i][j2] == pion); j2++; 
+            }
+        }
+        return bestScore;
+    }
+}
+
+AIMove getBestMove(char** tab, int boardSize, int K, char pion){
+    int bestScore = -1000;
+    Move move;
+
+    // AI turn
+    for (int i = 0; i < boardSize; i++)
+    {
+        for (int j = 0; j < boardSize; j++)
+        {
+            std::cout << "(" << i << ", " << j << ") : " << tab[i][j] << std::endl;
+            
+            // if the spot is available
+            if (tab[i][j] == ' ')
+            {
+                tab[i][j] = pion;
+                int score = minimax(tab, boardSize, K, pion, 0, true);
+                tab[i][j] = ' ';
+                if (score > bestScore)
+                {
+                    bestScore = score;
+                    move.x = i;
+                    move.y = j;
                 }
-			if(align == nbpion-1) return true;
-			
-			j2 = j; i2 = i; align = 0;
-			while( i2 < size && (j2-j) < nbpion && j2 < size && (j2-j) < nbpion) { 
-                align = align + (tab[i2][j2] == pion); i2++; j2++; 
-                }
-			if(align == nbpion-1) return true;
-			
-			j2 = j; i2 = i; align = 0;
-			while( i2 < size && (j2-j) < nbpion && j2 >=0 && (j-j2) < nbpion) { 
-                align = align + (tab[i2][j2] == pion); i2++; j2--; 
-                }
-			if(align == nbpion-1) return true;
-			
-		}
-	}
-	
-	return false;
+            }
+        }
+    }
+    tab[move.x][move.y] = pion;
 }
 
 void jouerX(char** tab, int N, int K, char pion){
@@ -44,16 +131,5 @@ void jouerX(char** tab, int N, int K, char pion){
     int y = -1;
     std::cout << "\nIA" << std::endl;
 
-    if (defendre(tab, N, K, 'O'))
-    {
-        std::cout << "\nIl est a 2 doigts de gagner la partie" << std::endl;
-    }
-    
-    do
-    {
-        std::cin >> x >> y;
-        std::cout<<std::endl;    
-    } while (!estLibre_morpion(tab, N, x, y));
-
-    placer_morpion(tab, N, x, y, pion);
+    getBestMove(tab, N, K, pion);
 }
