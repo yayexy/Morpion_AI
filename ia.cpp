@@ -1,6 +1,7 @@
 #include <iostream>
 #include <map>
 #include <algorithm> // pour std::max et std::min
+#include <limits>
 
 #include "morpion.h"
 
@@ -41,24 +42,22 @@ int minimax(char** tab, int boardSize, int K, char pion, int depth, bool isMaxim
         if (resultAI)
         {
             return WIN_SCORE;
-            //std::cout << "uihdoipufhsepiufhpseifuhspef1" << std::endl;
+            std::cout << "uihdoipufhsepiufhpseifuhspef1" << std::endl;
         }
         if (resultHuman){
             return LOSS_SCORE;
-            //std::cout << "uihdoipufhsepiufhpseifuhspef2" << std::endl;
+            std::cout << "uihdoipufhsepiufhpseifuhspef2" << std::endl;
         }
         if (resultTie){
             return TIE_SCORE;
-            //std::cout << "uihdoipufhsepiufhpseifuhspef3" << std::endl;
+            std::cout << "uihdoipufhsepiufhpseifuhspef3" << std::endl;
         }
     }
     
     // IA turn
     if (isMaximizing)
     {
-        //std::cout << "kakakakakakaka" << std::endl;
-
-        int bestScore = -1000;
+        int bestScore = std::numeric_limits<int>::min();
         for (int i = 0; i < boardSize; i++)
         {
             for (int j = 0; j < boardSize; j++)
@@ -66,7 +65,7 @@ int minimax(char** tab, int boardSize, int K, char pion, int depth, bool isMaxim
                 if (tab[i][j] == ' ')
                 {
                     tab[i][j] = pion;
-                    score += minimax(tab, boardSize, K, pionHuman, depth + 1, false);
+                    score = minimax(tab, boardSize, K, pionHuman, depth + 1, false);
                     tab[i][j] = ' ';
                     bestScore = std::max(score, bestScore);
                 }  
@@ -76,9 +75,7 @@ int minimax(char** tab, int boardSize, int K, char pion, int depth, bool isMaxim
     }
     else
     {
-        //std::cout << "uihdoipufhsepiufhpseifuhspef" << std::endl;
-
-        int bestScore = 1000;
+        int bestScore = std::numeric_limits<int>::max();
         for (int i = 0; i < boardSize; i++)
         {
             for (int j = 0; j < boardSize; j++)
@@ -86,7 +83,7 @@ int minimax(char** tab, int boardSize, int K, char pion, int depth, bool isMaxim
                 if (tab[i][j] == ' ')
                 {
                     tab[i][j] = pionHuman;
-                    score += minimax(tab, boardSize, K, pion, depth + 1, true);
+                    score = minimax(tab, boardSize, K, pion, depth + 1, true);
                     tab[i][j] = ' ';
                     bestScore = std::min(score, bestScore);
                 }
@@ -97,7 +94,7 @@ int minimax(char** tab, int boardSize, int K, char pion, int depth, bool isMaxim
 }
 
 void getBestMove(char** tab, int boardSize, int K, char pion){
-    int bestScore = -1000;
+    int bestScore = std::numeric_limits<int>::min();
     int score = 0;
     Move move;
 
@@ -106,6 +103,7 @@ void getBestMove(char** tab, int boardSize, int K, char pion){
     {
         for (int j = 0; j < boardSize; j++)
         {
+            
             std::cout << "(" << i << ", " << j << ") : " << tab[i][j] << std::endl;
             
             // if the spot is available
