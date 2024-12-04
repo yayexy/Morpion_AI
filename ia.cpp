@@ -29,31 +29,39 @@ bool isTie(char** tab, int boardSize){
     return true; // end game
 }
 
-int minimax(char** tab, int boardSize, int K, char pion, int depth, bool isMaximizing){
+int minimax(char** tab, int boardSize, int K, int depth, bool isMaximizing){
     char pionHuman = 'O';
-    bool resultAI = victoire_morpion(tab, boardSize, K, pion);
+    char pionAI = 'X';
+    bool resultAI = victoire_morpion(tab, boardSize, K, pionAI);
     bool resultHuman = victoire_morpion(tab, boardSize, K, pionHuman);
     bool resultTie = isTie(tab, boardSize);
-    int score;
+    int score = 0;
+
+    //affichage_morpion(tab, boardSize);
+    //std::cout << resultAI << " " << resultHuman << " " << resultTie << std::endl;
 
     // End condition
     if (resultAI == true || resultHuman == true || resultTie == true)
     {
         if (resultAI)
         {
+            //std::cout << "uihdoipufhsepiufhpseifuhspef1" << std::endl;
+            //std::cout << WIN_SCORE << std::endl;
             return WIN_SCORE;
-            std::cout << "uihdoipufhsepiufhpseifuhspef1" << std::endl;
         }
         if (resultHuman){
+            //std::cout << "uihdoipufhsepiufhpseifuhspef2" << std::endl;
+            //std::cout << LOSS_SCORE << std::endl;
             return LOSS_SCORE;
-            std::cout << "uihdoipufhsepiufhpseifuhspef2" << std::endl;
         }
         if (resultTie){
+            //affichage_morpion(tab, boardSize);
+            //std::cout << "uihdoipufhsepiufhpseifuhspef3" << std::endl;
+            //std::cout << TIE_SCORE << std::endl;
             return TIE_SCORE;
-            std::cout << "uihdoipufhsepiufhpseifuhspef3" << std::endl;
         }
     }
-    
+
     // IA turn
     if (isMaximizing)
     {
@@ -64,10 +72,9 @@ int minimax(char** tab, int boardSize, int K, char pion, int depth, bool isMaxim
             {
                 if (tab[i][j] == ' ')
                 {
-                    tab[i][j] = pion;
-                    score = minimax(tab, boardSize, K, pionHuman, depth + 1, false);
+                    tab[i][j] = pionAI;
+                    bestScore = std::max(bestScore, minimax(tab, boardSize, K, depth + 1, false));
                     tab[i][j] = ' ';
-                    bestScore = std::max(score, bestScore);
                 }  
             }
         }
@@ -83,9 +90,8 @@ int minimax(char** tab, int boardSize, int K, char pion, int depth, bool isMaxim
                 if (tab[i][j] == ' ')
                 {
                     tab[i][j] = pionHuman;
-                    score = minimax(tab, boardSize, K, pion, depth + 1, true);
+                    bestScore = std::min(bestScore, minimax(tab, boardSize, K, depth + 1, true));
                     tab[i][j] = ' ';
-                    bestScore = std::min(score, bestScore);
                 }
             }
         }
@@ -104,18 +110,19 @@ void getBestMove(char** tab, int boardSize, int K, char pion){
         for (int j = 0; j < boardSize; j++)
         {
             
-            std::cout << "(" << i << ", " << j << ") : " << tab[i][j] << std::endl;
+            //std::cout << "(" << i << ", " << j << ") : " << tab[i][j] << std::endl;
             
             // if the spot is available
             if (tab[i][j] == ' ')
             {
                 tab[i][j] = pion;
-                score = minimax(tab, boardSize, K, pion, 0, true);
-                std::cout << "score : " << score << "\n" << std::endl;
+                
+                score = minimax(tab, boardSize, K, 0, false);
+                //std::cout << "score : " << score << "\n" << std::endl;
                 tab[i][j] = ' ';
                 if (score > bestScore)
                 {
-                    std::cout << "c'est mieux la" << std::endl;
+                    //std::cout << "c'est mieux la" << std::endl;
                     bestScore = score;
                     move.x = i;
                     move.y = j;
