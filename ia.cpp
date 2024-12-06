@@ -2,13 +2,14 @@
 #include <map>
 #include <algorithm> // pour std::max et std::min
 #include <limits>
+#include <chrono>
 
 #include "morpion.h"
 
 const int WIN_SCORE = 10;
 const int LOSS_SCORE = -10;
 const int TIE_SCORE = 0;
-
+const int DEPTH_MAX = 6;
 struct Move {
     int x;
     int y;
@@ -37,28 +38,26 @@ int minimax(char** tab, int boardSize, int K, int depth, bool isMaximizing){
     bool resultTie = isTie(tab, boardSize);
     int score = 0;
 
-    //affichage_morpion(tab, boardSize);
-    //std::cout << resultAI << " " << resultHuman << " " << resultTie << std::endl;
-
     // End condition
-    if (resultAI == true || resultHuman == true || resultTie == true)
+    if (resultAI == true || resultHuman == true || resultTie == true || depth == DEPTH_MAX)
     {
         if (resultAI)
         {
-            //std::cout << "uihdoipufhsepiufhpseifuhspef1" << std::endl;
-            //std::cout << WIN_SCORE << std::endl;
             return WIN_SCORE;
         }
         if (resultHuman){
-            //std::cout << "uihdoipufhsepiufhpseifuhspef2" << std::endl;
-            //std::cout << LOSS_SCORE << std::endl;
             return LOSS_SCORE;
         }
         if (resultTie){
-            //affichage_morpion(tab, boardSize);
-            //std::cout << "uihdoipufhsepiufhpseifuhspef3" << std::endl;
-            //std::cout << TIE_SCORE << std::endl;
             return TIE_SCORE;
+        }
+        if (isMaximizing && depth == DEPTH_MAX)
+        {
+            return depth;
+        }
+        if (!isMaximizing && depth == DEPTH_MAX)
+        {
+            return -depth;
         }
     }
 
@@ -118,11 +117,12 @@ void getBestMove(char** tab, int boardSize, int K, char pion){
                 tab[i][j] = pion;
                 
                 score = minimax(tab, boardSize, K, 0, false);
+                
                 //std::cout << "score : " << score << "\n" << std::endl;
+                
                 tab[i][j] = ' ';
                 if (score > bestScore)
                 {
-                    //std::cout << "c'est mieux la" << std::endl;
                     bestScore = score;
                     move.x = i;
                     move.y = j;
@@ -134,9 +134,21 @@ void getBestMove(char** tab, int boardSize, int K, char pion){
 }
 
 void jouerX(char** tab, int N, int K, char pion){
-    //int x = -1;
-    //int y = -1;
     std::cout << "\nIA" << std::endl;
+    
+    // Capturer le temps de début
+    auto start = std::chrono::high_resolution_clock::now();
 
+    // Appeler la fonction pour obtenir le meilleur coup
     getBestMove(tab, N, K, pion);
+
+    // Capturer le temps de fin
+    auto end = std::chrono::high_resolution_clock::now();
+
+    // Calculer la durée écoulée
+    std::chrono::duration<double> duration = end - start;
+
+    // Afficher la durée en secondes
+    std::cout << "Temps de calcul de getBestMove: " << duration.count() << " secondes" << std::endl;
+
 }
