@@ -84,15 +84,86 @@ bool closeToWin(char** tab, int size, int nbpion) {
 
     return false; // Aucun alignement proche de la victoire n'a été trouvé
 }
+*/
 
+int aroundPion(char** tab, int boardsize, int x, int y, char pion){
+    int score = 0;
+
+    if (x > 0 && x < boardsize && y > 0 && y < boardsize)
+    {
+        for (int i = x-1; i < x+1; i++)
+        {
+            for (int j = y-1; j < y+1; j++)
+            {
+                if (tab[i][j] == pion)
+                {
+                    score += 1;
+                }
+                else if (tab[i][j] != ' ')
+                {
+                    score -= 1;
+                }
+            }
+        }
+    }
+}
 
 int evaluatePosition(char** tab, int boardSize, int nbpion){
     int score = 0;
+    for (int i = 0; i < boardSize; i++)
+    {
+        for (int j = 0; j < boardSize; j++)
+        {
+            if (tab[i][j] == pionAI)
+            {
+                score += aroundPion(tab, boardSize, i, j, pionAI);   
+            }
+            else if (tab[i][j] == pionHuman)
+            {
+                score -= aroundPion(tab, boardSize, i, j, pionHuman);
+            }
+        }
+    }
+    return score;
+}
+
+int evaluateHeuristic(char** tab, int boardSize, char pionAI, char pionHuman) {
+    int score = 0;
+
+    // Fonction pour compter les pions alignés dans une direction
+    auto countAligned = [&](int i, int j, int di, int dj, char pion) {
+        int align = 0;
+        while (i >= 0 && i < boardSize && j >= 0 && j < boardSize && tab[i][j] == pion) {
+            align++;
+            i += di;
+            j += dj;
+        }
+        return align;
+    };
+
+    // Parcourt chaque case
+    for (int i = 0; i < boardSize; i++) {
+        for (int j = 0; j < boardSize; j++) {
+            if (tab[i][j] == ' ') { // Case vide, potentielle position stratégique
+
+                // Évalue pour l'IA
+                score += countAligned(i, j, 1, 0, pionAI);  // Vertical
+                score += countAligned(i, j, 0, 1, pionAI);  // Horizontal
+                score += countAligned(i, j, 1, 1, pionAI);  // Diagonale principale
+                score += countAligned(i, j, 1, -1, pionAI); // Diagonale secondaire
+
+                // Évalue pour l'adversaire (blocage)
+                score -= countAligned(i, j, 1, 0, pionHuman);  // Vertical
+                score -= countAligned(i, j, 0, 1, pionHuman);  // Horizontal
+                score -= countAligned(i, j, 1, 1, pionHuman);  // Diagonale principale
+                score -= countAligned(i, j, 1, -1, pionHuman); // Diagonale secondaire
+            }
+        }
+    }
 
     return score;
 }
 
-*/
 
 int minimax(char** tab, int boardSize, int K, int depth, int alpha, int beta, bool isMaximizing){
     bool resultAI = victoire_morpion(tab, boardSize, K, pionAI);
@@ -101,7 +172,7 @@ int minimax(char** tab, int boardSize, int K, int depth, int alpha, int beta, bo
     int score = 0;
 
     // End condition
-    if (resultAI == true || resultHuman == true || resultTie == true)
+    if (resultAI == true || resultHuman == true || resultTie == true || depth >= DEPTH_MAX)
     {
         if (resultAI)
         {
@@ -113,6 +184,11 @@ int minimax(char** tab, int boardSize, int K, int depth, int alpha, int beta, bo
         if (resultTie){
             return TIE_SCORE;
         }
+        if (depth >= DEPTH_MAX)
+        {
+            return evaluateHeuristic(tab, boardSize, pionAI, pionHuman);
+        }
+        
     }
 
     // IA turn
@@ -122,7 +198,7 @@ int minimax(char** tab, int boardSize, int K, int depth, int alpha, int beta, bo
         for (int i = 0; i < boardSize; i++)
         {
             for (int j = 0; j < boardSize; j++)
-            {
+            {   
                 if (tab[i][j] == ' ')
                 {
                     tab[i][j] = pionAI;
