@@ -9,7 +9,9 @@
 const int WIN_SCORE = 10;
 const int LOSS_SCORE = -10;
 const int TIE_SCORE = 0;
-//const int DEPTH_MAX = 6;
+const int DEPTH_MAX = 5;
+const char pionHuman = 'O';
+const char pionAI = 'X';
 
 struct Move {
     int x;
@@ -31,9 +33,68 @@ bool isTie(char** tab, int boardSize){
     return true; // end game
 }
 
+/*
+// Vérifie si un joueur est à une case de gagner dans une direction donnée
+bool closeToWin(char** tab, int size, int nbpion) {
+    int requiredAlign = nbpion - 1; // Le nombre d'alignements requis pour être proche de gagner
+
+    // Parcourt chaque case du plateau
+    for (int i = 0; i < size; ++i) {
+        for (int j = 0; j < size; ++j) {
+            if (tab[i][j] == pionHuman) { // Si la case appartient au joueur
+
+                // Vérifie l'alignement vertical
+                int align = 0;
+                for (int k = 0; k < requiredAlign && i + k < size; ++k) {
+                    if (tab[i + k][j] == pionHuman) {
+                        align++;
+                    }
+                }
+                if (align == requiredAlign) return true;
+
+                // Vérifie l'alignement horizontal
+                align = 0;
+                for (int k = 0; k < requiredAlign && j + k < size; ++k) {
+                    if (tab[i][j + k] == pionHuman) {
+                        align++;
+                    }
+                }
+                if (align == requiredAlign) return true;
+
+                // Vérifie l'alignement diagonal (haut-gauche vers bas-droit)
+                align = 0;
+                for (int k = 0; k < requiredAlign && i + k < size && j + k < size; ++k) {
+                    if (tab[i + k][j + k] == pionHuman) {
+                        align++;
+                    }
+                }
+                if (align == requiredAlign) return true;
+
+                // Vérifie l'alignement diagonal (haut-droit vers bas-gauche)
+                align = 0;
+                for (int k = 0; k < requiredAlign && i + k < size && j - k >= 0; ++k) {
+                    if (tab[i + k][j - k] == pionHuman) {
+                        align++;
+                    }
+                }
+                if (align == requiredAlign) return true;
+            }
+        }
+    }
+
+    return false; // Aucun alignement proche de la victoire n'a été trouvé
+}
+
+
+int evaluatePosition(char** tab, int boardSize, int nbpion){
+    int score = 0;
+
+    return score;
+}
+
+*/
+
 int minimax(char** tab, int boardSize, int K, int depth, int alpha, int beta, bool isMaximizing){
-    char pionHuman = 'O';
-    char pionAI = 'X';
     bool resultAI = victoire_morpion(tab, boardSize, K, pionAI);
     bool resultHuman = victoire_morpion(tab, boardSize, K, pionHuman);
     bool resultTie = isTie(tab, boardSize);
@@ -44,10 +105,10 @@ int minimax(char** tab, int boardSize, int K, int depth, int alpha, int beta, bo
     {
         if (resultAI)
         {
-            return WIN_SCORE;
+            return WIN_SCORE - depth;
         }
         if (resultHuman){
-            return LOSS_SCORE;
+            return LOSS_SCORE + depth;
         }
         if (resultTie){
             return TIE_SCORE;
@@ -73,7 +134,6 @@ int minimax(char** tab, int boardSize, int K, int depth, int alpha, int beta, bo
                     alpha = std::max(alpha, score);
                     if (beta <= alpha)
                     {
-                        i = boardSize;
                         break;
                     }
                 }  
@@ -99,7 +159,6 @@ int minimax(char** tab, int boardSize, int K, int depth, int alpha, int beta, bo
                     beta = std::min(beta, score);
                     if (beta <= alpha)
                     {
-                        i = boardSize;
                         break;
                     }
                 }
@@ -114,6 +173,7 @@ void getBestMove(char** tab, int boardSize, int K, char pion){
     int alpha = std::numeric_limits<int>::min();
     int beta = std::numeric_limits<int>::max();
     int score = 0;
+    int depth = 0;
     Move move;
 
     // AI turn
@@ -129,7 +189,7 @@ void getBestMove(char** tab, int boardSize, int K, char pion){
             {
                 tab[i][j] = pion;
                 
-                score = minimax(tab, boardSize, K, 0, alpha, beta, false);
+                score = minimax(tab, boardSize, K, depth, alpha, beta, false);
                 
                 //std::cout << "score : " << score << "\n" << std::endl;
                 
@@ -140,6 +200,8 @@ void getBestMove(char** tab, int boardSize, int K, char pion){
                     move.x = i;
                     move.y = j;
                 }
+
+                std::cout << "oui" << std::endl;
             }
         }
     }
