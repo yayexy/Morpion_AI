@@ -6,12 +6,14 @@
 
 #include "morpion.h"
 
-const int WIN_SCORE = 10;
-const int LOSS_SCORE = -10;
+const int WIN_SCORE = 1000;
+const int LOSS_SCORE = -1000;
 const int TIE_SCORE = 0;
-const int DEPTH_MAX = 5;
-const char pionHuman = 'O';
-const char pionAI = 'X';
+const int DEPTH_MAX = 7;
+char pionHuman = 'O';
+char pionAI = 'X';
+
+int prunning_count = 0;
 
 struct Move {
     int x;
@@ -33,137 +35,41 @@ bool isTie(char** tab, int boardSize){
     return true; // end game
 }
 
-/*
-// Vérifie si un joueur est à une case de gagner dans une direction donnée
-bool closeToWin(char** tab, int size, int nbpion) {
-    int requiredAlign = nbpion - 1; // Le nombre d'alignements requis pour être proche de gagner
-
-    // Parcourt chaque case du plateau
-    for (int i = 0; i < size; ++i) {
-        for (int j = 0; j < size; ++j) {
-            if (tab[i][j] == pionHuman) { // Si la case appartient au joueur
-
-                // Vérifie l'alignement vertical
-                int align = 0;
-                for (int k = 0; k < requiredAlign && i + k < size; ++k) {
-                    if (tab[i + k][j] == pionHuman) {
-                        align++;
-                    }
-                }
-                if (align == requiredAlign) return true;
-
-                // Vérifie l'alignement horizontal
-                align = 0;
-                for (int k = 0; k < requiredAlign && j + k < size; ++k) {
-                    if (tab[i][j + k] == pionHuman) {
-                        align++;
-                    }
-                }
-                if (align == requiredAlign) return true;
-
-                // Vérifie l'alignement diagonal (haut-gauche vers bas-droit)
-                align = 0;
-                for (int k = 0; k < requiredAlign && i + k < size && j + k < size; ++k) {
-                    if (tab[i + k][j + k] == pionHuman) {
-                        align++;
-                    }
-                }
-                if (align == requiredAlign) return true;
-
-                // Vérifie l'alignement diagonal (haut-droit vers bas-gauche)
-                align = 0;
-                for (int k = 0; k < requiredAlign && i + k < size && j - k >= 0; ++k) {
-                    if (tab[i + k][j - k] == pionHuman) {
-                        align++;
-                    }
-                }
-                if (align == requiredAlign) return true;
-            }
-        }
+int countAligned(char** tab, int boardSize, int i, int j, int di, int dj, char pion) {
+    int align = 0;
+    while (i >= 0 && i < boardSize && j >= 0 && j < boardSize && tab[i][j] == pion) {
+        align++;
+        i += di;
+        j += dj;
     }
-
-    return false; // Aucun alignement proche de la victoire n'a été trouvé
-}
-*/
-
-int aroundPion(char** tab, int boardsize, int x, int y, char pion){
-    int score = 0;
-
-    if (x > 0 && x < boardsize && y > 0 && y < boardsize)
-    {
-        for (int i = x-1; i < x+1; i++)
-        {
-            for (int j = y-1; j < y+1; j++)
-            {
-                if (tab[i][j] == pion)
-                {
-                    score += 1;
-                }
-                else if (tab[i][j] != ' ')
-                {
-                    score -= 1;
-                }
-            }
-        }
-    }
-}
-
-int evaluatePosition(char** tab, int boardSize, int nbpion){
-    int score = 0;
-    for (int i = 0; i < boardSize; i++)
-    {
-        for (int j = 0; j < boardSize; j++)
-        {
-            if (tab[i][j] == pionAI)
-            {
-                score += aroundPion(tab, boardSize, i, j, pionAI);   
-            }
-            else if (tab[i][j] == pionHuman)
-            {
-                score -= aroundPion(tab, boardSize, i, j, pionHuman);
-            }
-        }
-    }
-    return score;
+    return align;
 }
 
 int evaluateHeuristic(char** tab, int boardSize, char pionAI, char pionHuman) {
     int score = 0;
-
-    // Fonction pour compter les pions alignés dans une direction
-    auto countAligned = [&](int i, int j, int di, int dj, char pion) {
-        int align = 0;
-        while (i >= 0 && i < boardSize && j >= 0 && j < boardSize && tab[i][j] == pion) {
-            align++;
-            i += di;
-            j += dj;
-        }
-        return align;
-    };
 
     // Parcourt chaque case
     for (int i = 0; i < boardSize; i++) {
         for (int j = 0; j < boardSize; j++) {
             if (tab[i][j] == ' ') { // Case vide, potentielle position stratégique
 
-                // Évalue pour l'IA
-                score += countAligned(i, j, 1, 0, pionAI);  // Vertical
-                score += countAligned(i, j, 0, 1, pionAI);  // Horizontal
-                score += countAligned(i, j, 1, 1, pionAI);  // Diagonale principale
-                score += countAligned(i, j, 1, -1, pionAI); // Diagonale secondaire
+                // Évalue les alignements pour l'IA
+                score += countAligned(tab, boardSize, i, j, 1, 0, pionAI);  // Vertical vers le bas
+                score += countAligned(tab, boardSize, i, j, 0, 1, pionAI);  // Horizontal vers le bas
+                score += countAligned(tab, boardSize, i, j, 1, 1, pionAI);  // Diagonale vers le bas-droite
+                score += countAligned(tab, boardSize, i, j, 1, -1, pionAI); // Diagonale vers le bas-gauche
 
-                // Évalue pour l'adversaire (blocage)
-                score -= countAligned(i, j, 1, 0, pionHuman);  // Vertical
-                score -= countAligned(i, j, 0, 1, pionHuman);  // Horizontal
-                score -= countAligned(i, j, 1, 1, pionHuman);  // Diagonale principale
-                score -= countAligned(i, j, 1, -1, pionHuman); // Diagonale secondaire
+                // Évalue les alignements pour l'adversaire (blocage)
+                score -= countAligned(tab, boardSize, i, j, 1, 0, pionHuman);  // Vertical vers le bas
+                score -= countAligned(tab, boardSize, i, j, 0, 1, pionHuman);  // Horizontal vers le bas
+                score -= countAligned(tab, boardSize, i, j, 1, 1, pionHuman);  // Diagonale vers le bas-droite
+                score -= countAligned(tab, boardSize, i, j, 1, -1, pionHuman); // Diagonale vers le bas-gauche
             }
         }
     }
 
     return score;
 }
-
 
 int minimax(char** tab, int boardSize, int K, int depth, int alpha, int beta, bool isMaximizing){
     bool resultAI = victoire_morpion(tab, boardSize, K, pionAI);
@@ -175,20 +81,23 @@ int minimax(char** tab, int boardSize, int K, int depth, int alpha, int beta, bo
     if (resultAI == true || resultHuman == true || resultTie == true || depth >= DEPTH_MAX)
     {
         if (resultAI)
-        {
+        {   
+            //std::cout << "eifjesoifjseoifj1" << std::endl;
             return WIN_SCORE - depth;
         }
         if (resultHuman){
+            //std::cout << "eifjesoifjseoifj2" << std::endl;
             return LOSS_SCORE + depth;
         }
         if (resultTie){
+            //std::cout << "eifjesoifjseoifj3" << std::endl;
             return TIE_SCORE;
         }
         if (depth >= DEPTH_MAX)
         {
-            return evaluateHeuristic(tab, boardSize, pionAI, pionHuman);
+            //std::cout << "fefsji" << std::endl;
+            //return evaluateHeuristic(tab, boardSize, pionAI, pionHuman);
         }
-        
     }
 
     // IA turn
@@ -208,8 +117,10 @@ int minimax(char** tab, int boardSize, int K, int depth, int alpha, int beta, bo
                     bestScore = std::max(bestScore, score);
 
                     alpha = std::max(alpha, score);
+
                     if (beta <= alpha)
-                    {
+                    {   
+                        prunning_count++;
                         break;
                     }
                 }  
@@ -233,8 +144,10 @@ int minimax(char** tab, int boardSize, int K, int depth, int alpha, int beta, bo
                     bestScore = std::min(bestScore, score);
 
                     beta = std::min(beta, score);
+    
                     if (beta <= alpha)
                     {
+                        prunning_count++;
                         break;
                     }
                 }
@@ -286,12 +199,20 @@ void getBestMove(char** tab, int boardSize, int K, char pion){
 
 void jouerX(char** tab, int N, int K, char pion){
     std::cout << "\nIA" << std::endl;
-    
+    if (pion == pionHuman)
+    {
+        char temp = pionHuman;
+        pionHuman = pionAI;
+        pionAI = temp;
+    }
+        
     // Capturer le temps de début
     auto start = std::chrono::high_resolution_clock::now();
 
     // Appeler la fonction pour obtenir le meilleur coup
     getBestMove(tab, N, K, pion);
+
+    std::cout << "\n\n\nLe nombre d'elagage est : " << prunning_count << "\n\n\n" << std::endl;
 
     // Capturer le temps de fin
     auto end = std::chrono::high_resolution_clock::now();
