@@ -4,8 +4,8 @@
 int main() {
 
 	char ** tab;
-	int size = 4;
-	int nbPion = 3;
+	int size = 6;
+	int nbPion = 4;
 	
 	init_morpion(tab,size);
 	

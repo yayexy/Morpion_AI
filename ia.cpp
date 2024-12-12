@@ -9,7 +9,7 @@
 const int WIN_SCORE = 1000;
 const int LOSS_SCORE = -1000;
 const int TIE_SCORE = 0;
-const int DEPTH_MAX = 7;
+const int DEPTH_MAX = 6;
 char pionHuman = 'O';
 char pionAI = 'X';
 
@@ -96,7 +96,7 @@ int minimax(char** tab, int boardSize, int K, int depth, int alpha, int beta, bo
         if (depth >= DEPTH_MAX)
         {
             //std::cout << "fefsji" << std::endl;
-            //return evaluateHeuristic(tab, boardSize, pionAI, pionHuman);
+            return evaluateHeuristic(tab, boardSize, pionAI, pionHuman);
         }
     }
 
