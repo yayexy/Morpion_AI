@@ -29,18 +29,17 @@ int main() {
 		int y = -1;
 		
 		
-		if (joueur){
+		if (!joueur){
 			jouerX(tab, size, nbPion, pion);
 		}
 		else{
-			
 			do {
 				std::cin >> x >> y;
 				std::cout<<std::endl;
 			} while(!estLibre_morpion(tab,size,x,y));
 		
 			placer_morpion(tab,size,x,y,pion);
-			
+		
 			//jouerX(tab, size, nbPion, 'O');
 		}
 		

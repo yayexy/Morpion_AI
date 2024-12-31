@@ -9,7 +9,7 @@
 const int WIN_SCORE = 1000;
 const int LOSS_SCORE = -1000;
 const int TIE_SCORE = 0;
-const int DEPTH_MAX = 6;
+const int DEPTH_MAX = 5;
 char pionHuman = 'O';
 char pionAI = 'X';
 
@@ -190,7 +190,7 @@ void getBestMove(char** tab, int boardSize, int K, char pion){
                     move.y = j;
                 }
 
-                std::cout << "oui" << std::endl;
+                //std::cout << "oui" << std::endl;
             }
         }
     }
