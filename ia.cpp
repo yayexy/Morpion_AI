@@ -6,10 +6,12 @@
 
 #include "morpion.h"
 
+bool debug = false;
+
 const int WIN_SCORE = 1000;
 const int LOSS_SCORE = -1000;
 const int TIE_SCORE = 0;
-const int DEPTH_MAX = 5;
+int DEPTH_MAX = 5;
 char pionHuman = 'O';
 char pionAI = 'X';
 
@@ -37,39 +39,43 @@ bool isTie(char** tab, int boardSize){
 
 int countAligned(char** tab, int boardSize, int i, int j, int di, int dj, char pion) {
     int align = 0;
+    
     while (i >= 0 && i < boardSize && j >= 0 && j < boardSize && tab[i][j] == pion) {
         align++;
         i += di;
         j += dj;
     }
+
     return align;
 }
 
 int evaluateHeuristic(char** tab, int boardSize, char pionAI, char pionHuman) {
     int score = 0;
 
-    // Parcourt chaque case
+    // range each case
     for (int i = 0; i < boardSize; i++) {
         for (int j = 0; j < boardSize; j++) {
-            if (tab[i][j] == ' ') { // Case vide, potentielle position stratégique
-
-                // Évalue les alignements pour l'IA
-                score += countAligned(tab, boardSize, i, j, 1, 0, pionAI);  // Vertical vers le bas
-                score += countAligned(tab, boardSize, i, j, 0, 1, pionAI);  // Horizontal vers le bas
-                score += countAligned(tab, boardSize, i, j, 1, 1, pionAI);  // Diagonale vers le bas-droite
-                score += countAligned(tab, boardSize, i, j, 1, -1, pionAI); // Diagonale vers le bas-gauche
-
-                // Évalue les alignements pour l'adversaire (blocage)
-                score -= countAligned(tab, boardSize, i, j, 1, 0, pionHuman);  // Vertical vers le bas
-                score -= countAligned(tab, boardSize, i, j, 0, 1, pionHuman);  // Horizontal vers le bas
-                score -= countAligned(tab, boardSize, i, j, 1, 1, pionHuman);  // Diagonale vers le bas-droite
-                score -= countAligned(tab, boardSize, i, j, 1, -1, pionHuman); // Diagonale vers le bas-gauche
+            if (tab[i][j] == ' ') { // empty case
+                continue; // do nothing
             }
+
+            // Evaluate alignments for IA
+            score += countAligned(tab, boardSize, i, j, 1, 0, pionAI);  // Vertical downwards
+            score += countAligned(tab, boardSize, i, j, 0, 1, pionAI);  // Horizontal rightwards
+            score += countAligned(tab, boardSize, i, j, 1, 1, pionAI);  // Diagonal bottom-right
+            score += countAligned(tab, boardSize, i, j, 1, -1, pionAI); // Diagonal bottom-left
+
+            // Evaluate alignments for opponent (block)
+            score -= countAligned(tab, boardSize, i, j, 1, 0, pionHuman);  // Vertical downwards
+            score -= countAligned(tab, boardSize, i, j, 0, 1, pionHuman);  // Horizontal rightwards
+            score -= countAligned(tab, boardSize, i, j, 1, 1, pionHuman);  // Diagonal bottom-right
+            score -= countAligned(tab, boardSize, i, j, 1, -1, pionHuman); // Diagonal bottom-left
         }
     }
 
     return score;
 }
+
 
 int minimax(char** tab, int boardSize, int K, int depth, int alpha, int beta, bool isMaximizing){
     bool resultAI = victoire_morpion(tab, boardSize, K, pionAI);
@@ -166,8 +172,12 @@ void getBestMove(char** tab, int boardSize, int K, char pion){
     {
         for (int j = 0; j < boardSize; j++)
         {
-            
-            //std::cout << "(" << i << ", " << j << ") : " << tab[i][j] << std::endl;
+
+            if (debug)
+            {
+                std::cout << "(" << i << ", " << j << ") : " << tab[i][j] << std::endl; // Aide
+                std::cout << "score : " << score << "\n" << std::endl; // Aide
+            }
             
             // if the spot is available
             if (tab[i][j] == ' ')
@@ -176,8 +186,6 @@ void getBestMove(char** tab, int boardSize, int K, char pion){
                 
                 score = minimax(tab, boardSize, K, depth, alpha, beta, false);
                 
-                //std::cout << "score : " << score << "\n" << std::endl;
-                
                 tab[i][j] = ' ';
                 if (score > bestScore)
                 {
@@ -185,8 +193,6 @@ void getBestMove(char** tab, int boardSize, int K, char pion){
                     move.x = i;
                     move.y = j;
                 }
-
-                //std::cout << "oui" << std::endl;
             }
         }
     }
@@ -195,22 +201,32 @@ void getBestMove(char** tab, int boardSize, int K, char pion){
 
 void jouerX(char** tab, int N, int K){
     std::cout << "\nIA" << std::endl;
-        
-    // Capturer le temps de début
+
+    // Variation of depth according to the board size (it is playable until a size of 10)
+    if (N == 6 || N == 7)
+    {
+        DEPTH_MAX = 4;
+    }
+    else if (N > 7)
+    {
+        DEPTH_MAX = 3;
+    }
+
+    // Store time at the beginning
     auto start = std::chrono::high_resolution_clock::now();
 
-    // Appeler la fonction pour obtenir le meilleur coup
+    // Call the function to get the best move
     getBestMove(tab, N, K, pionAI);
 
     std::cout << "\n\n\nLe nombre d'elagage est : " << prunning_count << "\n\n\n" << std::endl;
 
-    // Capturer le temps de fin
+    // Store time at the end
     auto end = std::chrono::high_resolution_clock::now();
 
-    // Calculer la durée écoulée
+    // Calculate time spent to find the best move (function)
     std::chrono::duration<double> duration = end - start;
 
-    // Afficher la durée en secondes
+    // Print time in seconds
     std::cout << "Temps de calcul de getBestMove: " << duration.count() << " secondes" << std::endl;
 
 }
