@@ -82,20 +82,16 @@ int minimax(char** tab, int boardSize, int K, int depth, int alpha, int beta, bo
     {
         if (resultAI)
         {   
-            //std::cout << "eifjesoifjseoifj1" << std::endl;
             return WIN_SCORE - depth;
         }
         if (resultHuman){
-            //std::cout << "eifjesoifjseoifj2" << std::endl;
             return LOSS_SCORE + depth;
         }
         if (resultTie){
-            //std::cout << "eifjesoifjseoifj3" << std::endl;
             return TIE_SCORE;
         }
         if (depth >= DEPTH_MAX)
         {
-            //std::cout << "fefsji" << std::endl;
             return evaluateHeuristic(tab, boardSize, pionAI, pionHuman);
         }
     }
@@ -197,20 +193,14 @@ void getBestMove(char** tab, int boardSize, int K, char pion){
     tab[move.x][move.y] = pion;
 }
 
-void jouerX(char** tab, int N, int K, char pion){
+void jouerX(char** tab, int N, int K){
     std::cout << "\nIA" << std::endl;
-    if (pion == pionHuman)
-    {
-        char temp = pionHuman;
-        pionHuman = pionAI;
-        pionAI = temp;
-    }
         
     // Capturer le temps de début
     auto start = std::chrono::high_resolution_clock::now();
 
     // Appeler la fonction pour obtenir le meilleur coup
-    getBestMove(tab, N, K, pion);
+    getBestMove(tab, N, K, pionAI);
 
     std::cout << "\n\n\nLe nombre d'elagage est : " << prunning_count << "\n\n\n" << std::endl;
 

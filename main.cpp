@@ -4,8 +4,8 @@
 int main() {
 
 	char ** tab;
-	int size = 6;
-	int nbPion = 4;
+	int size = 3;
+	int nbPion = 3;
 	
 	init_morpion(tab,size);
 	
@@ -30,7 +30,7 @@ int main() {
 		
 		
 		if (!joueur){
-			jouerX(tab, size, nbPion, pion);
+			jouerX(tab, size, nbPion);
 		}
 		else{
 			do {
@@ -39,8 +39,6 @@ int main() {
 			} while(!estLibre_morpion(tab,size,x,y));
 		
 			placer_morpion(tab,size,x,y,pion);
-		
-			//jouerX(tab, size, nbPion, 'O');
 		}
 		
 		affichage_morpion(tab,size);
