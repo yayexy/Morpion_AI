@@ -5,8 +5,6 @@
 
 #include "morpion.h"
 
-bool debug = false;
-
 const int WIN_SCORE = 1000;
 const int LOSS_SCORE = -1000;
 const int TIE_SCORE = 0;
@@ -230,12 +228,6 @@ void getBestMove(char** tab, int boardSize, int K, char pion){
     {
         for (int j = 0; j < boardSize; j++)
         {
-
-            if (debug)
-            {
-                std::cout << "(" << i << ", " << j << ") : " << tab[i][j] << std::endl; // Aide
-                std::cout << "score : " << score << "\n" << std::endl; // Aide
-            }
             
             // if the spot is available
             if (tab[i][j] == ' ')
@@ -260,16 +252,20 @@ void getBestMove(char** tab, int boardSize, int K, char pion){
 void jouerX(char** tab, int N, int K){
     std::cout << "\nTour de l'IA" << std::endl;
 
-    // Variation of depth according to the board size (it is playable until a size of 10)
-    if (N == 6 || N == 7)
+    // Variation of depth according to the board size (it is playable until a size of 17 because it's under 10 sec, otherwise a size of 20 is like 25 seconds)
+    if (N == 5)
     {
         DEPTH_MAX = 4;
     }
-    else if (N > 7 && N < 10)
+    else if (N > 5 && N < 8)
     {
         DEPTH_MAX = 3;
     }
-    else if (N >= 10)
+    else if (N == 8 || N == 9 || N == 10)
+    {
+        DEPTH_MAX = 2;
+    }
+    else if (N >= 11)
     {
         DEPTH_MAX = 1;
     }
