@@ -1,5 +1,4 @@
 #include <iostream>
-#include <map>
 #include <algorithm> // pour std::max et std::min
 #include <limits>
 #include <chrono>
@@ -37,45 +36,95 @@ bool isTie(char** tab, int boardSize){
     return true; // end game
 }
 
-int countAligned(char** tab, int boardSize, int i, int j, int di, int dj, char pion) {
-    int align = 0;
-    
-    while (i >= 0 && i < boardSize && j >= 0 && j < boardSize && tab[i][j] == pion) {
-        align++;
-        i += di;
-        j += dj;
-    }
-
-    return align;
-}
-
-int evaluateHeuristic(char** tab, int boardSize, char pionAI, char pionHuman) {
+int evaluateStrategic(char** tab, int boardSize, int K, int i, int j, char pionAI, char pionHuman) {
     int score = 0;
 
-    // range each case
-    for (int i = 0; i < boardSize; i++) {
-        for (int j = 0; j < boardSize; j++) {
-            if (tab[i][j] == ' ') { // empty case
-                continue; // do nothing
+    // possible directions: vertical, horizontal, diagonal (both directions)
+    int directions[4][2] = {{1, 0}, {0, 1}, {1, 1}, {1, -1}};
+
+    for (auto& dir : directions) {
+        int di = dir[0];
+        int dj = dir[1];
+
+        // count aligned pions and potential empty spaces for both players
+        int countAI = 0;   // number of AI pions in this direction
+        int countHuman = 0; // number of human pions in this direction
+        int emptyAI = 0;   // number of empty spaces in the AI's potential alignment
+        int emptyHuman = 0; // number of empty spaces in the opponent's potential alignment
+
+        // check the direction +di, +dj for AI's alignment
+        int x = i;
+        int y = j;
+        while (x >= 0 && x < boardSize && y >= 0 && y < boardSize) {
+            if (tab[x][y] == pionAI) {
+                countAI++; // AI's pion is found
+            } else if (tab[x][y] == pionHuman) {
+                break; // alignment blocked by the opponent's pion
+            } else {
+                emptyAI++; // empty space that can be used by the AI
             }
+            x += di;
+            y += dj;
+        }
 
-            // Evaluate alignments for IA
-            score += countAligned(tab, boardSize, i, j, 1, 0, pionAI);  // Vertical downwards
-            score += countAligned(tab, boardSize, i, j, 0, 1, pionAI);  // Horizontal rightwards
-            score += countAligned(tab, boardSize, i, j, 1, 1, pionAI);  // Diagonal bottom-right
-            score += countAligned(tab, boardSize, i, j, 1, -1, pionAI); // Diagonal bottom-left
+        // check the opposite direction -di, -dj for AI's alignment
+        x = i - di;
+        y = j - dj;
+        while (x >= 0 && x < boardSize && y >= 0 && y < boardSize) {
+            if (tab[x][y] == pionAI) {
+                countAI++; // AI's pion is found
+            } else if (tab[x][y] == pionHuman) {
+                break; // alignment blocked by the opponent's pion
+            } else {
+                emptyAI++; // empty space that can be used by the AI
+            }
+            x -= di;
+            y -= dj;
+        }
 
-            // Evaluate alignments for opponent (block)
-            score -= countAligned(tab, boardSize, i, j, 1, 0, pionHuman);  // Vertical downwards
-            score -= countAligned(tab, boardSize, i, j, 0, 1, pionHuman);  // Horizontal rightwards
-            score -= countAligned(tab, boardSize, i, j, 1, 1, pionHuman);  // Diagonal bottom-right
-            score -= countAligned(tab, boardSize, i, j, 1, -1, pionHuman); // Diagonal bottom-left
+        // evaluate the score for this direction for the AI
+        if (countAI + emptyAI >= K) {
+            score += countAI; // the more pions aligned, the higher the score
+        }
+
+        // check the direction +di, +dj for the opponent's alignment
+        x = i;
+        y = j;
+        while (x >= 0 && x < boardSize && y >= 0 && y < boardSize) {
+            if (tab[x][y] == pionHuman) {
+                countHuman++; // opponent's pion is found
+            } else if (tab[x][y] == pionAI) {
+                break; // alignment blocked by the AI's pion
+            } else {
+                emptyHuman++; // empty space that can be used by the opponent
+            }
+            x += di;
+            y += dj;
+        }
+
+        // check the opposite direction -di, -dj for the opponent's alignment
+        x = i - di;
+        y = j - dj;
+        while (x >= 0 && x < boardSize && y >= 0 && y < boardSize) {
+            if (tab[x][y] == pionHuman) {
+                countHuman++; // opponent's pion is found
+            } else if (tab[x][y] == pionAI) {
+                break; // alignment blocked by the AI's pion
+            } else {
+                emptyHuman++; // empty space that can be used by the opponent
+            }
+            x -= di;
+            y -= dj;
+        }
+
+        // evaluate the defensive score for this direction
+        if (countHuman + emptyHuman >= K) {
+            score -= countHuman; // penalize if the opponent is close to aligning
         }
     }
 
     return score;
 }
-
 
 int minimax(char** tab, int boardSize, int K, int depth, int alpha, int beta, bool isMaximizing){
     bool resultAI = victoire_morpion(tab, boardSize, K, pionAI);
@@ -98,8 +147,17 @@ int minimax(char** tab, int boardSize, int K, int depth, int alpha, int beta, bo
         }
         if (depth >= DEPTH_MAX)
         {
-            return evaluateHeuristic(tab, boardSize, pionAI, pionHuman);
+            int strategicScore = 0;
+            for (int i = 0; i < boardSize; i++) {
+                for (int j = 0; j < boardSize; j++) {
+                    if (tab[i][j] == ' ') {
+                        strategicScore += evaluateStrategic(tab, boardSize, K, i, j, pionAI, pionHuman);
+                    }
+                }
+            }
+            return strategicScore;
         }
+        
     }
 
     // IA turn
@@ -200,17 +258,22 @@ void getBestMove(char** tab, int boardSize, int K, char pion){
 }
 
 void jouerX(char** tab, int N, int K){
-    std::cout << "\nIA" << std::endl;
+    std::cout << "\nTour de l'IA" << std::endl;
 
     // Variation of depth according to the board size (it is playable until a size of 10)
     if (N == 6 || N == 7)
     {
         DEPTH_MAX = 4;
     }
-    else if (N > 7)
+    else if (N > 7 && N < 10)
     {
         DEPTH_MAX = 3;
     }
+    else if (N >= 10)
+    {
+        DEPTH_MAX = 1;
+    }
+    
 
     // Store time at the beginning
     auto start = std::chrono::high_resolution_clock::now();
@@ -228,5 +291,4 @@ void jouerX(char** tab, int N, int K){
 
     // Print time in seconds
     std::cout << "Temps de calcul de getBestMove: " << duration.count() << " secondes" << std::endl;
-
 }
